@@ -4,9 +4,9 @@ description: >-
   inline widgets, press highlight, custom truncation tokens with expand/collapse,
   capsule backgrounds, gradient text, selection & copy, data detectors and RTL.
 version: 1.0.0
-homepage: https://github.com/FPJack/ZLRichLabel
-repository: https://github.com/FPJack/ZLRichLabel
-issue_tracker: https://github.com/FPJack/ZLRichLabel/issues
+homepage: https://github.com/FPJack/zl_rich_label
+repository: https://github.com/FPJack/zl_rich_label
+issue_tracker: https://github.com/FPJack/zl_rich_label/issues
 topics:
   - rich-text
   - text
