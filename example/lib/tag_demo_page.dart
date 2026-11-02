@@ -34,6 +34,7 @@ class _TagDemoPageState extends State<TagDemoPage> {
 
   @override
   Widget build(BuildContext context) {
+
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: const Color(0xFFFEF7FF),
@@ -59,7 +60,8 @@ class _TagDemoPageState extends State<TagDemoPage> {
               icon: const Icon(Icons.delete_outline)),
         ],
       ),
-      body: Column(
+      body:
+      Column(
         children: <Widget>[
           TapInfoPanel(log: _log),
           const Divider(height: 1),
