@@ -163,4 +163,44 @@ void main() {
       expect(ZLTextStyle.none.isEmpty, isTrue);
     });
   });
+
+  group('custom tag symbols', () {
+    List<String> raws(String source, String open, String close,
+            {ZLTagParserConfiguration base = ZLTagParserConfiguration.hTags}) =>
+        ZLTagParser.tags(source,
+                configuration:
+                    base.copyWith(openSymbol: open, closeSymbol: close))
+            .map((ZLTagInfo t) => '${t.name}:${t.text}')
+            .toList();
+
+    test('[] 【】 {} and multi-char symbols', () {
+      expect(raws('a [h]x[/h] [h1]y[h1/] <h>z</h>', '[', ']'),
+          <String>['h:x', 'h1:y']);
+      expect(raws('a 【h】x【/h】 【h2】y【/h2】', '【', '】'),
+          <String>['h:x', 'h2:y']);
+      expect(raws('a {h}x{/h}', '{', '}'), <String>['h:x']);
+      expect(raws('a [[h]]x[[/h]]', '[[', ']]'), <String>['h:x']);
+      expect(raws('a <h>x</h>', '<', '>'), <String>['h:x']);
+    });
+
+    test('attributes and nesting with custom symbols', () {
+      final List<ZLTagInfo> tags = ZLTagParser.tags(
+          '[b]bold [a href="x]y"]link[/a][/b]',
+          configuration: ZLTagParserConfiguration.anyTags
+              .copyWith(openSymbol: '[', closeSymbol: ']'));
+      expect(tags.map((ZLTagInfo t) => t.name), <String>['b', 'a']);
+      expect(tags[1].attribute('href'), 'x]y');
+      expect(tags[1].text, 'link');
+      expect(tags[0].text, 'bold link');
+    });
+
+    test('markup pattern name group uses the symbol length', () {
+      final ZLTagMarkupPattern pattern = ZLTagMarkupPattern(
+          ZLTagParserConfiguration.hTags
+              .copyWith(openSymbol: '[[', closeSymbol: ']]'));
+      final Match match = pattern.allMatches('a [[h1]]x[[/h1]]').single;
+      expect(match.group(1), 'h1');
+      expect(match.group(2), 'x');
+    });
+  });
 }

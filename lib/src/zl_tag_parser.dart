@@ -11,11 +11,21 @@ class ZLTagParserConfiguration {
     this.namePattern = r'h\d*',
     this.allowsNesting = false,
     this.allowsSelfClosing = false,
-  });
+    this.openSymbol = '<',
+    this.closeSymbol = '>',
+  })  : assert(openSymbol != '', 'openSymbol must not be empty'),
+        assert(closeSymbol != '', 'closeSymbol must not be empty');
 
   /// Tag names that are recognised (regular expression, must match the whole
   /// name, case-insensitive). Default `h\d*` (`<h>`, `<h1>`, `<h2>` …).
   final String namePattern;
+
+  /// Symbol that opens a tag, default `<`. E.g. `[` for `[h]text[/h]`,
+  /// `【` for `【h】text【/h】`, `{` for `{h}text{/h}`.
+  final String openSymbol;
+
+  /// Symbol that closes a tag, default `>`. E.g. `]`, `】`, `}`.
+  final String closeSymbol;
 
   /// Whether tags may nest: `<b>bold <color value="red">red</color></b>`.
   final bool allowsNesting;
@@ -34,11 +44,17 @@ class ZLTagParserConfiguration {
       namePattern: anyTagName, allowsNesting: true, allowsSelfClosing: true);
 
   ZLTagParserConfiguration copyWith(
-      {String? namePattern, bool? allowsNesting, bool? allowsSelfClosing}) {
+      {String? namePattern,
+      bool? allowsNesting,
+      bool? allowsSelfClosing,
+      String? openSymbol,
+      String? closeSymbol}) {
     return ZLTagParserConfiguration(
       namePattern: namePattern ?? this.namePattern,
       allowsNesting: allowsNesting ?? this.allowsNesting,
       allowsSelfClosing: allowsSelfClosing ?? this.allowsSelfClosing,
+      openSymbol: openSymbol ?? this.openSymbol,
+      closeSymbol: closeSymbol ?? this.closeSymbol,
     );
   }
 
@@ -47,11 +63,13 @@ class ZLTagParserConfiguration {
       other is ZLTagParserConfiguration &&
       other.namePattern == namePattern &&
       other.allowsNesting == allowsNesting &&
-      other.allowsSelfClosing == allowsSelfClosing;
+      other.allowsSelfClosing == allowsSelfClosing &&
+      other.openSymbol == openSymbol &&
+      other.closeSymbol == closeSymbol;
 
   @override
-  int get hashCode =>
-      Object.hash(namePattern, allowsNesting, allowsSelfClosing);
+  int get hashCode => Object.hash(
+      namePattern, allowsNesting, allowsSelfClosing, openSymbol, closeSymbol);
 }
 
 /// A parsed tag.
@@ -251,10 +269,38 @@ class ZLTagDocument {
 ///   otherwise it is an empty tag when self-closing tags are allowed, else
 ///   plain text.
 abstract final class ZLTagParser {
-  static final RegExp _tokenRegex = RegExp(
-    r'''<(/)?([a-z][a-z0-9_:-]*)((?:\s+[^\s=/>"']+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(/)?>''',
-    caseSensitive: false,
-  );
+  static final Map<String, RegExp> _tokenRegexCache = <String, RegExp>{};
+
+  /// Tag token regex for the given open / close symbols. With the default
+  /// `<` / `>` it is identical to:
+  /// `<(/)?([a-z][a-z0-9_:-]*)((?:\s+[^\s=/>"']+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(/)?>`
+  static RegExp _tokenRegex(String open, String close) {
+    return _tokenRegexCache.putIfAbsent('$open\u0000$close', () {
+      final String o = RegExp.escape(open);
+      final String c = RegExp.escape(close);
+      final String closeChars = _classChars(close);
+      final String allChars = _classChars('$open$close');
+      return RegExp(
+        '$o(/)?([a-z][a-z0-9_:-]*)'
+        '((?:\\s+[^\\s=/"\'$closeChars]+'
+        '(?:\\s*=\\s*(?:"[^"]*"|\'[^\']*\'|[^\\s"\'=`$allChars]+))?)*)'
+        '\\s*(/)?$c',
+        caseSensitive: false,
+      );
+    });
+  }
+
+  /// Distinct characters of [symbols], escaped for a regex character class.
+  static String _classChars(String symbols) {
+    final StringBuffer buffer = StringBuffer();
+    final Set<int> seen = <int>{};
+    for (final int unit in symbols.codeUnits) {
+      if (!seen.add(unit)) continue;
+      final String char = String.fromCharCode(unit);
+      buffer.write(r'\^-[]'.contains(char) ? '\\$char' : char);
+    }
+    return buffer.toString();
+  }
 
   static final RegExp _attributeRegex = RegExp(
       r'''([^\s=/>"']+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?''');
@@ -362,7 +408,9 @@ abstract final class ZLTagParser {
       append(ZLTagElementNode(element));
     }
 
-    for (final RegExpMatch token in _tokenRegex.allMatches(source)) {
+    for (final RegExpMatch token
+        in _tokenRegex(configuration.openSymbol, configuration.closeSymbol)
+            .allMatches(source)) {
       if (token.start > cursor) {
         append(ZLTagTextNode(TextRange(start: cursor, end: token.start)));
       }
@@ -514,9 +562,10 @@ class ZLTagMarkupPattern implements Pattern {
         .roots
         .where((ZLTagElement e) => e.range.start >= start)
         .map((ZLTagElement element) {
+      final int nameStart =
+          element.openRange.start + configuration.openSymbol.length;
       final TextRange nameRange = TextRange(
-          start: element.openRange.start + 1,
-          end: element.openRange.start + 1 + element.name.length);
+          start: nameStart, end: nameStart + element.name.length);
       return ZLPatternMatch(
         input: string,
         pattern: this,

@@ -62,6 +62,8 @@ class ZLTagRichLabel extends ZLRichLabel {
     this.tagPriority = 0,
     this.parsesTags = true,
     this.tagConfiguration = ZLTagParserConfiguration.hTags,
+    this.tagOpenSymbol,
+    this.tagCloseSymbol,
     super.truncationToken,
     super.expandToken,
     super.collapseToken,
@@ -144,6 +146,22 @@ class ZLTagRichLabel extends ZLRichLabel {
   /// and self-closing tags.
   final ZLTagParserConfiguration tagConfiguration;
 
+  /// Symbol opening a tag, overriding [ZLTagParserConfiguration.openSymbol]
+  /// (default `<`). E.g. `[` → `[h]text[/h]`, `【` → `【h】text【/h】`,
+  /// `{` → `{h}text{/h}`. Must not be empty.
+  final String? tagOpenSymbol;
+
+  /// Symbol closing a tag, overriding [ZLTagParserConfiguration.closeSymbol]
+  /// (default `>`). E.g. `]`, `】`, `}`. Must not be empty.
+  final String? tagCloseSymbol;
+
+  /// [tagConfiguration] with [tagOpenSymbol] / [tagCloseSymbol] applied.
+  ZLTagParserConfiguration get effectiveTagConfiguration =>
+      tagOpenSymbol == null && tagCloseSymbol == null
+          ? tagConfiguration
+          : tagConfiguration.copyWith(
+              openSymbol: tagOpenSymbol, closeSymbol: tagCloseSymbol);
+
   @override
   State<ZLRichLabel> createState() => _ZLTagRichLabelState();
 }
@@ -165,7 +183,7 @@ class _ZLTagRichLabelState extends ZLRichLabelState<ZLTagRichLabel> {
     final ZLRichRule? cached = _rule;
     if (cached != null) return cached;
     final ZLTagMarkupPattern pattern =
-        _pattern ??= ZLTagMarkupPattern(widget.tagConfiguration);
+        _pattern ??= ZLTagMarkupPattern(widget.effectiveTagConfiguration);
     return _rule = ZLRichRule(
       name: ZLTagRichLabel.tagRuleName,
       pattern: pattern,
@@ -184,9 +202,10 @@ class _ZLTagRichLabelState extends ZLRichLabelState<ZLTagRichLabel> {
   @override
   void didUpdateWidget(ZLTagRichLabel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.tagConfiguration != widget.tagConfiguration ||
-        oldWidget.tagPriority != widget.tagPriority) {
-      if (oldWidget.tagConfiguration != widget.tagConfiguration) {
+    final bool configurationChanged =
+        oldWidget.effectiveTagConfiguration != widget.effectiveTagConfiguration;
+    if (configurationChanged || oldWidget.tagPriority != widget.tagPriority) {
+      if (configurationChanged) {
         _pattern = null;
       }
       _rule = null; // new rule object: parsed again, tags rendered again

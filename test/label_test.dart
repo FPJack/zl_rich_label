@@ -366,4 +366,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(reports, 1);
   });
+
+  testWidgets('custom tag symbols and ZLBracketLabel',
+      (WidgetTester tester) async {
+    final List<String> taps = <String>[];
+    await tester.pumpWidget(_app(ZLTagRichLabel(
+      text: 'Read 【h1】Agreement【/h1】 and <h2>x</h2>',
+      style: _base,
+      tagOpenSymbol: '【',
+      tagCloseSymbol: '】',
+    )));
+    expect(_render(tester).content.string, 'Read Agreement and <h2>x</h2>');
+
+    await tester.pumpWidget(_app(ZLBracketLabel(
+      text: 'Read [h1]Agreement[/h1] and [h2]Privacy[/h2].',
+      style: _base,
+      onTagTap: (ZLTagInfo info) => taps.add(info.name),
+    )));
+    expect(_render(tester).content.string, 'Read Agreement and Privacy.');
+    await tester.tapAt(_centerOf(tester, const TextRange(start: 5, end: 14)));
+    await tester.tapAt(_centerOf(tester, const TextRange(start: 19, end: 26)));
+    await tester.pump();
+    expect(taps, <String>['h1', 'h2']);
+  });
 }

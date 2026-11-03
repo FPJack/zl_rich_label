@@ -6,7 +6,7 @@ import 'package:zl_rich_label_example/advanced_cases.dart';
 import 'package:zl_rich_label_example/demo_common.dart';
 
 void main() {
-  testWidgets('advanced cases 24 – 31 render and respond',
+  testWidgets('advanced cases 24 – 33 render and respond',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 9000);
     tester.view.devicePixelRatio = 1;
@@ -107,6 +107,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('✓ 已关注'), findsOneWidget);
     expect(find.textContaining('结论：所有 Widget 已跟随 label 尺寸更新'), findsOneWidget);
+
+    // 32: custom tag symbols [] / 【】 / {}.
+    expect(renderWith('隐私政策；<h1>尖括号</h1> 不再解析').content.string,
+        '同意 用户协议 和 隐私政策；<h1>尖括号</h1> 不再解析。');
+    expect(renderWith('未闭合 【h】原样显示').content.string,
+        '同意 用户协议 和 隐私政策；未闭合 【h】原样显示。');
+    expect(renderWith('默认样式').content.string, '同意 用户协议 和 隐私政策，默认样式。');
+
+    // 33: ZLBracketLabel taps per tag name.
+    final RenderZLText r33 = renderWith('登录即表示同意');
+    expect(r33.content.string, '登录即表示同意 用户协议 和 隐私政策，FAQ 走 onTagTap。');
+    final int agreement = r33.content.string.indexOf('用户协议');
+    await tester.tapAt(r33.localToGlobal(r33
+        .rectsForRange(TextRange(start: agreement, end: agreement + 4))
+        .first
+        .center));
+    await tester.pumpAndSettle();
+    expect(log.last!.action, 'h1 handler → 打开用户协议');
+
+    // 33b: ZLBracketLabel with generic tags and attributes.
+    final RenderZLText r33b = renderWith('粗体里 粉色');
+    final int flutter = r33b.content.string.indexOf('Flutter');
+    await tester.tapAt(r33b.localToGlobal(r33b
+        .rectsForRange(TextRange(start: flutter, end: flutter + 7))
+        .first
+        .center));
+    await tester.pumpAndSettle();
+    expect(log.last!.action, '打开 https://flutter.dev');
 
     expect(tester.takeException(), isNull);
   });

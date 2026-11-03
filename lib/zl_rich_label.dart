@@ -10,6 +10,7 @@ library;
 
 export 'src/zl_attributed_label.dart';
 export 'src/zl_attributed_text.dart';
+export 'src/zl_bracket_label.dart';
 export 'src/zl_data_detector.dart';
 export 'src/zl_label_core.dart'
     show ZLLabelController, ZLLabelGestureDetails, ZLLabelLink;

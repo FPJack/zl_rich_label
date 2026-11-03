@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+#  zl_rich_label: ^1.0.0
   zl_rich_label:
     path: ../
 

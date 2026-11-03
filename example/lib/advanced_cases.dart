@@ -4,9 +4,10 @@ import 'package:zl_rich_label/zl_rich_label.dart';
 
 import 'demo_common.dart';
 
-/// Cases 24 – 31 of the iOS example: expand / collapse, long press / double
+/// Cases 24 – 33 of the example: expand / collapse, long press / double
 /// tap, selection, generic tags, capsules and gradients, padding, inline
-/// widgets following the label size, `ZLTextStyle` chains.
+/// widgets following the label size, `ZLTextStyle` chains, custom tag
+/// symbols and `ZLBracketLabel`.
 List<Widget> advancedCases(TapLog log) => <Widget>[
       ..._case24(log),
       _Case24e(log: log),
@@ -18,6 +19,9 @@ List<Widget> advancedCases(TapLog log) => <Widget>[
       _Case29(log: log),
       _Case30(log: log),
       _case31(log),
+      ..._case32(log),
+      _case33(log),
+      _case33b(log),
     ];
 
 const String _long =
@@ -979,3 +983,121 @@ Widget _case31(TapLog log) {
     ),
   );
 }
+
+// MARK: - 32. 自定义标签开闭符号
+
+/// 32. tagOpenSymbol / tagCloseSymbol：用 [] / 【】 / {} 代替 <>，其余逻辑不变
+List<Widget> _case32(TapLog log) {
+  const List<(String, String, String, String)> cases =
+      <(String, String, String, String)>[
+    (
+      '32. 自定义开闭符号 [ ]',
+      '[',
+      ']',
+      '同意 [h1]用户协议[/h1] 和 [h2]隐私政策[h2/]；<h1>尖括号</h1> 不再解析。',
+    ),
+    (
+      '32b. 自定义开闭符号 【 】',
+      '【',
+      '】',
+      '同意 【h1】用户协议【/h1】 和 【h2】隐私政策【/h2】；未闭合 【h】原样显示。',
+    ),
+    (
+      '32c. 自定义开闭符号 { }',
+      '{',
+      '}',
+      '同意 {h1}用户协议{/h1} 和 {h2}隐私政策{/h2}，{h}默认样式{/h}。',
+    ),
+  ];
+  return <Widget>[
+    for (final (String title, String open, String close, String source)
+        in cases)
+      TagCase(
+        title: title,
+        source: source,
+        log: log,
+        builder: (BuildContext context, CaseHooks hooks) => ZLTagRichLabel(
+          text: source,
+          style: kBaseStyle,
+          verticalAlignment: ZLVerticalAlignment.top,
+          tagOpenSymbol: open,
+          tagCloseSymbol: close,
+          tagStyle: ZLTextStyle().color(M.blue),
+          tagStyles: <String, ZLTextStyle>{
+            'h1': ZLTextStyle().color(M.blue).underline(color: M.blue),
+            'h2': ZLTextStyle().color(M.deepOrange),
+          },
+          onTagTap: hooks.onTagTap,
+          onParsed: hooks.onParsed,
+        ),
+      ),
+  ];
+}
+
+// MARK: - 33. ZLBracketLabel
+
+/// 33. ZLBracketLabel：继承 ZLTagRichLabel，固定用 [ ] 作为标签符号
+Widget _case33(TapLog log) {
+  const String title = '33. ZLBracketLabel（[h] … [/h]）';
+  const String source = '登录即表示同意 [h1]用户协议[/h1] 和 [h2]隐私政策[/h2]，'
+      '[h3]FAQ[/h3] 走 onTagTap。';
+  return TagCase(
+    title: title,
+    source: source,
+    log: log,
+    builder: (BuildContext context, CaseHooks hooks) => ZLBracketLabel(
+      text: source,
+      style: kBaseStyle,
+      verticalAlignment: ZLVerticalAlignment.top,
+      tagStyle: ZLTextStyle().systemFont(15, weight: FontWeight.w600),
+      tagStyles: <String, ZLTextStyle>{
+        'h1': ZLTextStyle().color(M.blue),
+        'h2': ZLTextStyle().color(M.deepOrange),
+        'h3': ZLTextStyle().color(M.teal),
+      },
+      highlightStyle: ZLTextStyle().backgroundColor(const Color(0xFFE0E0E0)),
+      tagTapHandlers: <String, ZLTagTapCallback>{
+        'h1': (ZLTagInfo info) => hooks.tap(info, 'h1 handler → 打开用户协议'),
+        'h2': (ZLTagInfo info) => hooks.tap(info, 'h2 handler → 打开隐私政策'),
+      },
+      onTagTap: hooks.onTagTap,
+      onParsed: hooks.onParsed,
+    ),
+  );
+}
+
+/// 33b. ZLBracketLabel + 通用标签：任意标签名 / 属性 / 嵌套
+Widget _case33b(TapLog log) {
+  const String title = '33b. ZLBracketLabel + 通用标签（属性 / 嵌套）';
+  const String source =
+      '[b]粗体里 [color value="#E91E63"]粉色 [u]加下划线[/u][/color][/b]，'
+      '链接 [a href="https://flutter.dev"]Flutter[/a]，<b>尖括号</b> 原样显示。';
+  return TagCase(
+    title: title,
+    source: source,
+    log: log,
+    builder: (BuildContext context, CaseHooks hooks) => ZLBracketLabel(
+      text: source,
+      style: kBaseStyle,
+      verticalAlignment: ZLVerticalAlignment.top,
+      tagConfiguration: ZLTagParserConfiguration.anyTags,
+      tagStyles: <String, ZLTextStyle>{
+        'b': ZLTextStyle().bold(),
+        'u': ZLTextStyle().underline(),
+        'a': ZLTextStyle().color(M.blue).underline(),
+      },
+      tagStyleBuilder: (ZLTagInfo info) {
+        final Color? color =
+            info.name == 'color' ? info.colorAttribute('value') : null;
+        return color == null ? null : ZLTextStyle().color(color);
+      },
+      tagTapHandlers: <String, ZLTagTapCallback>{
+        'a': (ZLTagInfo info) =>
+            hooks.tap(info, '打开 ${info.attribute('href') ?? ''}'),
+      },
+      onTagTap: hooks.onTagTap,
+      onParsed: hooks.onParsed,
+    ),
+  );
+}
+

@@ -5,8 +5,8 @@ import 'demo_common.dart';
 import 'rule_cases.dart';
 import 'tag_cases_basic.dart';
 
-/// Home page: all features of `ZLTagRichLabel` / `ZLRichLabel` (cases 1 – 31
-/// of the iOS example). [listMode] shows the same cards in a lazily built
+/// Home page: all features of `ZLTagRichLabel` / `ZLRichLabel` /
+/// `ZLBracketLabel` (cases 1 – 33). [listMode] shows the same cards in a lazily built
 /// `ListView` (the "TableView" page of the iOS example).
 class TagDemoPage extends StatefulWidget {
   const TagDemoPage({super.key, this.listMode = false});
