@@ -3,11 +3,6 @@
 [![pub package](https://img.shields.io/pub/v/zl_rich_label.svg)](https://pub.dev/packages/zl_rich_label)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Rich text labels for Flutter — the Flutter version of the iOS library
-[ZLRichLabel](https://github.com/FPJack/ZLRichLabel): regex rules with priorities,
-`<h1>` / generic tag highlighting, inline widgets, press highlight, rich truncation
-tokens with expand / collapse, capsule backgrounds, gradient text, selection & copy,
-data detectors and RTL support. Pure Dart, no dependencies besides Flutter.
 
 **zl_rich_label 是一个 Flutter 富文本 Label：用正则规则（或内置的 `<h1>…</h1>` 标签）从普通字符串里识别出关键内容，再由你决定每段内容怎么显示、点了做什么。**
 
