@@ -1,0 +1,30 @@
+name: zl_rich_label
+description: >-
+  Rich text labels: regex rules with priorities, <h1>/generic tag highlighting,
+  inline widgets, press highlight, custom truncation tokens with expand/collapse,
+  capsule backgrounds, gradient text, selection & copy, data detectors and RTL.
+version: 1.1.0
+homepage: https://github.com/FPJack/zl_rich_label
+repository: https://github.com/FPJack/zl_rich_label
+issue_tracker: https://github.com/FPJack/zl_rich_label/issues
+topics:
+  - rich-text
+  - text
+  - label
+  - widget
+  - tags
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
